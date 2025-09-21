@@ -4,26 +4,46 @@
 <meta charset="UTF-8">
 <title>Laberinto del Gatito 🐱</title>
 <style>
-  body { margin:0; background:#222; display:flex; justify-content:center; align-items:center; flex-direction:column; height:100vh; }
-  canvas { border:4px solid #333; background:white; display:block; max-width:100%; height:auto; }
-  #timer { font-size:32px; color:red; font-weight:bold; margin:10px; }
-  
+  body {
+    margin:0;
+    background:#222;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+    color:white;
+  }
+  #gameContainer {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+  }
+  canvas {
+    border:4px solid #333;
+    background:white;
+    display:block;
+  }
+  #timer {
+    font-size:32px;
+    color:red;
+    font-weight:bold;
+    margin-bottom:15px;
+    text-align:center;
+  }
   /* Controles táctiles */
   #mobileControls {
-    position: fixed;
-    bottom: 20px;
-    left: 20px;
     display: grid;
     grid-template-columns: 60px 60px 60px;
     grid-template-rows: 60px 60px 60px;
-    grid-gap: 5px;
-    opacity: 0.7;
+    grid-gap: 10px;
+    justify-content: center;
+    margin-top: 20px;
   }
   #mobileControls button {
-    background: rgba(50,50,50,0.5);
+    background: rgba(50,50,50,0.8);
     color: white;
     border: none;
-    border-radius: 50%;
+    border-radius: 10px;
     font-size: 28px;
     display: flex;
     justify-content: center;
@@ -32,10 +52,10 @@
     transition: transform 0.1s;
   }
   #mobileControls button:active {
-    background: rgba(255,255,255,0.5);
+    background: rgba(255,255,255,0.8);
     transform: scale(1.2);
   }
-  /* Ubicar las flechas en forma de cruz */
+  /* Ubicar flechas */
   #btnUp { grid-column: 2; grid-row: 1; }
   #btnLeft { grid-column: 1; grid-row: 2; }
   #btnRight { grid-column: 3; grid-row: 2; }
@@ -43,15 +63,18 @@
 </style>
 </head>
 <body>
-<div id="timer">10</div>
-<canvas id="gameCanvas"></canvas>
-
-<!-- Controles móviles -->
-<div id="mobileControls">
-  <button id="btnUp" onclick="movePlayer(0,-1)">⬆️</button>
-  <button id="btnLeft" onclick="movePlayer(-1,0)">⬅️</button>
-  <button id="btnRight" onclick="movePlayer(1,0)">➡️</button>
-  <button id="btnDown" onclick="movePlayer(0,1)">⬇️</button>
+<div id="gameContainer">
+  <div>
+    <div id="timer">10</div>
+    <canvas id="gameCanvas" width="800" height="480"></canvas>
+  </div>
+  <!-- Controles móviles a la derecha -->
+  <div id="mobileControls">
+    <button id="btnUp" onclick="movePlayer(0,-1)">⬆️</button>
+    <button id="btnLeft" onclick="movePlayer(-1,0)">⬅️</button>
+    <button id="btnRight" onclick="movePlayer(1,0)">➡️</button>
+    <button id="btnDown" onclick="movePlayer(0,1)">⬇️</button>
+  </div>
 </div>
 
 <!-- Audios -->
@@ -103,13 +126,6 @@ let audioEnabled = false;
 document.addEventListener("keydown", ()=>{ audioEnabled=true; }, {once:true});
 document.addEventListener("click", ()=>{ audioEnabled=true; }, {once:true});
 
-function adjustCanvas(){
-  canvas.width = Math.min(window.innerWidth-20, cols*tileSize);
-  canvas.height = Math.min(window.innerHeight-150, rows*tileSize);
-  drawGame();
-}
-window.addEventListener("resize", adjustCanvas);
-
 function setMaze(index){
   currentMazeIndex = index;
   maze = mazes[currentMazeIndex];
@@ -122,7 +138,7 @@ function setMaze(index){
     fishes = [{x:18,y:1,collected:false},{x:1,y:10,collected:false}];
   }
   stopAllSounds();
-  adjustCanvas();
+  drawGame();
   startCountdown();
 }
 
@@ -148,22 +164,17 @@ function drawMaze(){
 
 function drawPlayer(){
   if(catImage.complete){
-    const scaleX = canvas.width/(cols*tileSize);
-    const scaleY = canvas.height/(rows*tileSize);
-    ctx.drawImage(catImage, player.x*tileSize*scaleX, player.y*tileSize*scaleY, tileSize*scaleX, tileSize*scaleY);
+    ctx.drawImage(catImage, player.x*tileSize, player.y*tileSize, tileSize, tileSize);
   }
 }
 
 function drawFishes(){
-  const scale = Math.min(canvas.width/(cols*tileSize), canvas.height/(rows*tileSize));
-  ctx.font = tileSize*scale+"px Arial";
+  ctx.font = tileSize+"px Arial";
   ctx.textAlign="center";
   ctx.textBaseline="middle";
   for(let f of fishes){
     if(!f.collected){
-      const scaleX = canvas.width/(cols*tileSize);
-      const scaleY = canvas.height/(rows*tileSize);
-      ctx.fillText("🐟", f.x*tileSize*scaleX + tileSize*scaleX/2, f.y*tileSize*scaleY + tileSize*scaleY/2);
+      ctx.fillText("🐟", f.x*tileSize + tileSize/2, f.y*tileSize + tileSize/2);
     }
   }
 }
