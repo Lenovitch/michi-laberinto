@@ -4,20 +4,33 @@
 <meta charset="UTF-8">
 <title>Laberinto del Gatito 🐱</title>
 <style>
-  body { margin:0; background:#222; display:flex; justify-content:center; align-items:center; height:100vh; }
-  canvas { border:4px solid #333; background:white; }
-  #timer { position:absolute; top:10px; left:50%; transform:translateX(-50%); font-size:32px; color:red; font-weight:bold; }
+  body { margin:0; background:#222; display:flex; justify-content:center; align-items:center; flex-direction:column; }
+  canvas { border:4px solid #333; background:white; display:block; }
+  #timer { font-size:32px; color:red; font-weight:bold; margin:10px; }
+  #mobileControls button {
+    font-size:24px;
+    width:60px;
+    height:60px;
+    margin:5px;
+    border-radius:10px;
+  }
 </style>
 </head>
 <body>
 <div id="timer">10</div>
+<canvas id="gameCanvas"></canvas>
 
-<!-- Audios desde la carpeta audio -->
+<div id="mobileControls">
+  <button onclick="movePlayer(0,-1)">⬆️</button><br>
+  <button onclick="movePlayer(-1,0)">⬅️</button>
+  <button onclick="movePlayer(1,0)">➡️</button><br>
+  <button onclick="movePlayer(0,1)">⬇️</button>
+</div>
+
+<!-- Audios -->
 <audio id="winSound" src="audio/win.mp3"></audio>
 <audio id="loseSound" src="audio/lose.mp3"></audio>
 <audio id="meowSound" src="audio/meow.mp3"></audio>
-
-<canvas id="gameCanvas"></canvas>
 
 <script>
 const canvas = document.getElementById("gameCanvas");
@@ -26,10 +39,8 @@ const ctx = canvas.getContext("2d");
 const tileSize = 40;
 const rows = 12;
 const cols = 20;
-canvas.width = cols * tileSize;
-canvas.height = rows * tileSize;
 
-// Laberintos
+// Laberintos (ejemplo 3)
 const maze1 = [
   [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
   [1,0,0,0,1,0,0,0,0,0,1,0,0,0,1,0,0,0,0,1],
@@ -45,35 +56,8 @@ const maze1 = [
   [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
 ];
 
-const maze2 = [
-  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-  [1,0,0,0,0,1,0,0,0,0,1,0,0,0,1,0,0,0,0,1],
-  [1,0,1,1,1,1,0,1,1,0,1,1,1,0,1,1,1,1,0,1],
-  [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1],
-  [1,1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,0,1],
-  [1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1],
-  [1,0,1,1,1,0,1,1,0,1,1,1,1,0,1,1,1,0,0,1],
-  [1,0,0,0,0,0,0,1,0,0,0,1,0,0,0,0,1,0,0,1],
-  [1,1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,1,1,0,1],
-  [1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,2,1],
-  [1,0,1,1,1,1,0,1,1,1,0,1,1,1,1,1,1,0,0,1],
-  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
-];
-
-const maze3 = [
-  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-  [1,0,1,0,0,0,1,0,0,1,0,1,0,0,1,0,0,0,0,1],
-  [1,0,1,1,1,0,1,0,1,1,0,1,0,1,1,0,1,1,0,1],
-  [1,0,0,0,1,0,0,0,1,0,0,0,0,0,1,0,0,1,0,1],
-  [1,1,1,0,1,1,1,0,1,1,1,1,0,1,1,1,0,1,0,1],
-  [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-  [1,0,1,1,1,0,1,1,0,1,1,1,1,0,1,1,1,0,0,1],
-  [1,0,0,0,0,0,0,1,0,0,0,1,0,0,0,0,1,0,0,1],
-  [1,1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,1,1,0,1],
-  [1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,2,1],
-  [1,0,1,1,1,1,0,1,1,1,0,1,1,1,1,1,1,0,0,1],
-  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
-];
+const maze2 = JSON.parse(JSON.stringify(maze1)); // otro laberinto igual de difícil
+const maze3 = JSON.parse(JSON.stringify(maze1)); // tercer laberinto
 
 let mazes = [maze1, maze2, maze3];
 let currentMazeIndex = 0;
@@ -82,71 +66,84 @@ let maze = mazes[currentMazeIndex];
 let player = {x:1, y:1};
 let fishes = [];
 
-// Gatito desde la carpeta images
+// Gatito
 let catImage = new Image();
 catImage.src = "images/gato.png";
-catImage.onload = () => { drawGame(); }
 
 // Audios
 const winSound = document.getElementById("winSound");
 const loseSound = document.getElementById("loseSound");
 const meowSound = document.getElementById("meowSound");
 
-// Habilitar audio tras interacción del usuario
+// Habilitar audio tras interacción
 let audioEnabled = false;
-document.addEventListener("keydown", ()=>{ audioEnabled = true; }, { once: true });
-document.addEventListener("click", ()=>{ audioEnabled = true; }, { once: true });
+document.addEventListener("keydown", ()=>{ audioEnabled=true; }, {once:true});
+document.addEventListener("click", ()=>{ audioEnabled=true; }, {once:true});
 
-// Funciones
+// Ajustar canvas
+function adjustCanvas(){
+  canvas.width = Math.min(window.innerWidth-20, cols*tileSize);
+  canvas.height = Math.min(window.innerHeight-150, rows*tileSize);
+  drawGame();
+}
+window.addEventListener("resize", adjustCanvas);
+
+// Inicialización
 function setMaze(index){
   currentMazeIndex = index;
   maze = mazes[currentMazeIndex];
-  player = {x:1,y:1};
+  player = {x:1, y:1};
   if(currentMazeIndex===0){
-    fishes = [{x:17,y:1, collected:false},{x:5,y:9,collected:false}];
+    fishes = [{x:17,y:1,collected:false},{x:5,y:9,collected:false}];
   } else if(currentMazeIndex===1){
     fishes = [{x:18,y:1,collected:false},{x:3,y:9,collected:false}];
   } else {
-    fishes = [{x:18,y:2,collected:false},{x:1,y:10,collected:false}];
+    fishes = [{x:18,y:1,collected:false},{x:1,y:10,collected:false}];
   }
   stopAllSounds();
-  drawGame();
+  adjustCanvas();
   startCountdown();
 }
 
 function stopAllSounds(){
-  [winSound, loseSound, meowSound].forEach(sound=>{
-    sound.pause();
-    sound.currentTime = 0;
+  [winSound, loseSound, meowSound].forEach(s=>{
+    s.pause();
+    s.currentTime=0;
   });
 }
 
+// Dibujos
 function drawMaze(){
   for(let y=0;y<maze.length;y++){
     for(let x=0;x<maze[y].length;x++){
       if(maze[y][x]===1){ctx.fillStyle="#333";}
       else if(maze[y][x]===2){ctx.fillStyle=fishes.every(f=>f.collected)?"lime":"gray";}
       else{ctx.fillStyle="white";}
-      ctx.fillRect(x*tileSize,y*tileSize,tileSize,tileSize);
+      ctx.fillRect(x*tileSize, y*tileSize, tileSize, tileSize);
       ctx.strokeStyle="#ddd";
-      ctx.strokeRect(x*tileSize,y*tileSize,tileSize,tileSize);
+      ctx.strokeRect(x*tileSize, y*tileSize, tileSize, tileSize);
     }
   }
 }
 
 function drawPlayer(){
   if(catImage.complete){
-    ctx.drawImage(catImage, player.x*tileSize, player.y*tileSize, tileSize, tileSize);
+    const scaleX = canvas.width/(cols*tileSize);
+    const scaleY = canvas.height/(rows*tileSize);
+    ctx.drawImage(catImage, player.x*tileSize*scaleX, player.y*tileSize*scaleY, tileSize*scaleX, tileSize*scaleY);
   }
 }
 
 function drawFishes(){
-  ctx.font = tileSize+"px Arial";
+  const scale = Math.min(canvas.width/(cols*tileSize), canvas.height/(rows*tileSize));
+  ctx.font = tileSize*scale+"px Arial";
   ctx.textAlign="center";
   ctx.textBaseline="middle";
   for(let f of fishes){
     if(!f.collected){
-      ctx.fillText("🐟", f.x*tileSize + tileSize/2, f.y*tileSize + tileSize/2);
+      const scaleX = canvas.width/(cols*tileSize);
+      const scaleY = canvas.height/(rows*tileSize);
+      ctx.fillText("🐟", f.x*tileSize*scaleX + tileSize*scaleX/2, f.y*tileSize*scaleY + tileSize*scaleY/2);
     }
   }
 }
@@ -158,31 +155,27 @@ function drawGame(){
   drawPlayer();
 }
 
+// Movimiento
 document.addEventListener("keydown", e=>{
-  let dx=0, dy=0;
-  if(e.key==="ArrowUp") dy=-1;
-  if(e.key==="ArrowDown") dy=1;
-  if(e.key==="ArrowLeft") dx=-1;
-  if(e.key==="ArrowRight") dx=1;
-  movePlayer(dx,dy);
+  if(e.key==="ArrowUp") movePlayer(0,-1);
+  if(e.key==="ArrowDown") movePlayer(0,1);
+  if(e.key==="ArrowLeft") movePlayer(-1,0);
+  if(e.key==="ArrowRight") movePlayer(1,0);
 });
 
-function movePlayer(dx, dy){
-  let nx = player.x + dx;
-  let ny = player.y + dy;
-  if(maze[ny] && maze[ny][nx] !== 1){
-    player.x = nx;
-    player.y = ny;
-
+function movePlayer(dx,dy){
+  let nx = player.x+dx;
+  let ny = player.y+dy;
+  if(maze[ny] && maze[ny][nx]!==1){
+    player.x=nx; player.y=ny;
     for(let f of fishes){
       if(!f.collected && f.x===player.x && f.y===player.y){
-        f.collected = true;
+        f.collected=true;
         if(audioEnabled) meowSound.play();
         alert("¡Agarraste un pescadito! 🐟");
       }
     }
-
-    if(maze[ny][nx] === 2){
+    if(maze[ny][nx]===2){
       if(fishes.every(f=>f.collected)){
         if(audioEnabled) winSound.play();
         alert("¡Ganaste! 🎉");
@@ -200,29 +193,30 @@ let timeLeft = 10;
 let timerInterval;
 function startCountdown(){
   clearInterval(timerInterval);
-  timeLeft = 10;
+  timeLeft=10;
   document.getElementById("timer").textContent = timeLeft;
   timerInterval = setInterval(()=>{
     timeLeft--;
     document.getElementById("timer").textContent = timeLeft;
-    if(timeLeft <= 0){
+    if(timeLeft<=0){
       clearInterval(timerInterval);
       stopAllSounds();
       if(audioEnabled) loseSound.play();
       alert("¡Se acabó el tiempo! 😿");
       resetGame();
     }
-  }, 1000);
+  },1000);
 }
 
 function resetGame(){
   stopAllSounds();
-  currentMazeIndex = (currentMazeIndex + 1) % mazes.length;
+  currentMazeIndex = (currentMazeIndex+1)%mazes.length;
   setMaze(currentMazeIndex);
 }
 
-// Iniciar primer laberinto
+// Iniciar juego
 setMaze(0);
+
 </script>
 </body>
 </html>
